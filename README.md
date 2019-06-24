@@ -1,2 +1,2 @@
-# Peterman-A-Java-Based-Search-Engine
-UCI CS221 (Information Retrival) Project.
+# A-Lucene-based-Java-Search-Engine
+This is the course project for cs221 at UC Irvine.

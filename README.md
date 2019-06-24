@@ -1,2 +1,2 @@
-# A-Lucene-based-Java-Search-Engine
-This is a Apache Lucene based Java Search Engine. It's also the course project for CS221 at UC Irvine.
+# Peterman-A-Java-Based-Search-Engine
+UCI CS221 (Information Retrival) Project.

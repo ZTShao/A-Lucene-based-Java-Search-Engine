@@ -1,0 +1,5 @@
+cat 222
+and 111
+sand 22
+dog 144
+cats 222

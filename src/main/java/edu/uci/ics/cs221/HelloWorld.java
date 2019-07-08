@@ -32,14 +32,11 @@ public class HelloWorld {
         documentStore.addDocument(0, new Document("UCI CS221 Information Retrieval"));
         documentStore.addDocument(1, new Document("Donald Bren School of Information and Computer Sciences"));
         documentStore.addDocument(2, new Document("UCI School of ICS "));
-
         documentStore.close();
-
         // open the existing document store again. use FullScanSearcher to search a query
         documentStore = createOrOpen(docStorePath);
 
         String query = "information";
-
         Analyzer analyzer = new NaiveAnalyzer();
         FullScanSearcher fullScanSearcher = new FullScanSearcher(documentStore, analyzer);
         List<Integer> searchResult = fullScanSearcher.search(query);

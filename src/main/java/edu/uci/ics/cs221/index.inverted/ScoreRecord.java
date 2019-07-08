@@ -1,11 +1,12 @@
 package edu.uci.ics.cs221.index.inverted;
 
-public class ScoreRecord{
+public class ScoreRecord {
     private DocID docID;
     private double score;
-    public ScoreRecord(DocID docID,double score){
+
+    public ScoreRecord(DocID docID, double score) {
         this.docID = docID;
-        this.score=score;
+        this.score = score;
     }
 
     public DocID getDocID() {

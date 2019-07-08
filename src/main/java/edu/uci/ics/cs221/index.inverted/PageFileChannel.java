@@ -16,21 +16,20 @@ import static java.nio.file.StandardOpenOption.WRITE;
 /**
  * Page File Channel provides low level page-oriented read/write operations of a file.
  * Each read/write operation is based on a minimal unit of a page of bytes.
- *
+ * <p>
  * Your InvertedIndex implementation MUST use this PageFileChannel class to do read / write operations for *ALL* files your index uses.
- *
+ * <p>
  * As an example, if you want to create and write to a file called "segment0":
- *
+ * <p>
  * ```
  * Path filePath = Paths.get("segment0");
  * PageFileChannel pageFileChannel = PageFileChannel.createOrOpen(filePath);
- *
+ * <p>
  * ByteBuffer byteBuffer = ByteBuffer.allocate(PAGE_SIZE);
  * // fill in the byteBuffer with your data
  * pageFileChannel.appendPage(byteBuffer);
  * pageFileChannel.close();
  * ```
- *
  */
 public class PageFileChannel implements AutoCloseable {
 
@@ -62,11 +61,11 @@ public class PageFileChannel implements AutoCloseable {
      */
     public static PageFileChannel createOrOpen(Path path) {
         try {
-            if (! Files.exists(path)) {
+            if (!Files.exists(path)) {
                 Files.createDirectories(path.getParent());
                 Files.createFile(path);
             }
-            Verify.verify(! Files.isDirectory(path));
+            Verify.verify(!Files.isDirectory(path));
             return new PageFileChannel(FileChannel.open(path, READ, WRITE));
         } catch (IOException e) {
             throw new UncheckedIOException(e);
@@ -109,7 +108,7 @@ public class PageFileChannel implements AutoCloseable {
     /**
      * Writes a page of bytes into the given page.
      *
-     * @param pageNum, the page should already exist.
+     * @param pageNum,   the page should already exist.
      * @param byteBuffer byteBuffer with capacity = PAGE_SIZE
      */
     public void writePage(long pageNum, ByteBuffer byteBuffer) {
@@ -149,6 +148,7 @@ public class PageFileChannel implements AutoCloseable {
 
     /**
      * Gets the number of pages of the file.
+     *
      * @return number of pages of the file
      */
     public int getNumPages() {

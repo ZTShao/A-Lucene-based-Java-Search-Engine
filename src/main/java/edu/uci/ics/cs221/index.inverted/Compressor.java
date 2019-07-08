@@ -12,9 +12,9 @@ public interface Compressor {
     /**
      * Decodes part of a byte array to a list of integers.
      *
-     * @param bytes bytes to decode
+     * @param bytes       bytes to decode
      * @param startOffset starting position to decode
-     * @param length number of bytes to decode from start position
+     * @param length      number of bytes to decode from start position
      */
     List<Integer> decode(byte[] bytes, int startOffset, int length);
 

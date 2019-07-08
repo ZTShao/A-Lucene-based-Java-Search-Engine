@@ -13,27 +13,27 @@ public class DeltaVarLenCompressor implements Compressor {
     public byte[] encode(List<Integer> integers) {
         List<Integer> deltaEncoded = new ArrayList<>();
         deltaEncoded.add(integers.get(0));
-        for(int i=0;i<integers.size()-1;i++){
-            deltaEncoded.add(integers.get(i+1)-integers.get(i));
+        for (int i = 0; i < integers.size() - 1; i++) {
+            deltaEncoded.add(integers.get(i + 1) - integers.get(i));
         }
         List<Byte> result = new ArrayList<>();
-        for(int i=0;i<deltaEncoded.size();i++){
+        for (int i = 0; i < deltaEncoded.size(); i++) {
             List<Byte> curNumByte = new ArrayList<>();
-            encodeInteger(deltaEncoded.get(i),curNumByte);
-            for(int j=curNumByte.size()-1;j>=0;j--) {
+            encodeInteger(deltaEncoded.get(i), curNumByte);
+            for (int j = curNumByte.size() - 1; j >= 0; j--) {
                 result.add(curNumByte.get(j));
             }
         }
         byte[] encodedByteArray = new byte[result.size()];
-        for(int i=0;i<result.size();i++) encodedByteArray[i] = result.get(i);
+        for (int i = 0; i < result.size(); i++) encodedByteArray[i] = result.get(i);
         return encodedByteArray;
     }
 
-    private void encodeInteger(int a, List<Byte> encodedList){
-        int mod = a%128;
-        encodedList.add((byte)mod);
-        int res = a/128;
-        while(res>=1) {
+    private void encodeInteger(int a, List<Byte> encodedList) {
+        int mod = a % 128;
+        encodedList.add((byte) mod);
+        int res = a / 128;
+        while (res >= 1) {
             int resMod = res % 128 + 128;
             encodedList.add((byte) resMod);
             res /= 128;
@@ -43,10 +43,10 @@ public class DeltaVarLenCompressor implements Compressor {
     @Override
     public List<Integer> decode(byte[] bytes, int start, int length) {
         List<Integer> result = new ArrayList<>();
-        int totalLength = start+length;
+        int totalLength = start + length;
         int i = start;
         int offset = 0;
-        while(i<totalLength) {
+        while (i < totalLength) {
             int num = 0;
             while (bytes[i] < 0) {
                 int cur = num + 128 + bytes[i];

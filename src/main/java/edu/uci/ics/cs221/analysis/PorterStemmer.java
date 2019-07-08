@@ -1,30 +1,29 @@
 /**
  * Project 1, task 3: Incorporate a Porter stemmer.
- *
+ * <p>
  * Stemming is the process of reducing a word into its "stem" ("root") form.
- *
+ * <p>
  * Porter stemming is a classic and popular algorithm that uses a set of rules and steps to process a token.
  * We ask you to incorporate the following existing Porter stemmer implementation into this project.
- *
+ * <p>
  * https://github.com/apache/lucene-solr/blob/master/lucene/analysis/common/src/java/org/apache/lucene/analysis/en/PorterStemmer.java
- *
  */
 /*
-         * Licensed to the Apache Software Foundation (ASF) under one or more
-         * contributor license agreements.  See the NOTICE file distributed with
-         * this work for additional information regarding copyright ownership.
-         * The ASF licenses this file to You under the Apache License, Version 2.0
-         * (the "License"); you may not use this file except in compliance with
-         * the License.  You may obtain a copy of the License at
-         *
-         *     http://www.apache.org/licenses/LICENSE-2.0
-         *
-         * Unless required by applicable law or agreed to in writing, software
-         * distributed under the License is distributed on an "AS IS" BASIS,
-         * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-         * See the License for the specific language governing permissions and
-         * limitations under the License.
-*/
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package edu.uci.ics.cs221.analysis;
 
 
@@ -57,8 +56,7 @@ import org.apache.lucene.util.ArrayUtil;
  * by calling one of the various stem(something) methods.
  */
 
-public class PorterStemmer implements Stemmer
-{
+public class PorterStemmer implements Stemmer {
     private char[] b;
     private int i,    /* offset into b */
             j, k, k0;
@@ -75,7 +73,10 @@ public class PorterStemmer implements Stemmer
      * the stemmer by calling add(char) and then stem(), you must call reset()
      * before starting another word.
      */
-    public void reset() { i = 0; dirty = false; }
+    public void reset() {
+        i = 0;
+        dirty = false;
+    }
 
     /**
      * Add a character to the word being stemmed.  When you are finished
@@ -83,7 +84,7 @@ public class PorterStemmer implements Stemmer
      */
     public void add(char ch) {
         if (b.length <= i) {
-            b = ArrayUtil.grow(b, i+1);
+            b = ArrayUtil.grow(b, i + 1);
         }
         b[i++] = ch;
     }
@@ -94,28 +95,38 @@ public class PorterStemmer implements Stemmer
      * and getResultLength (which is generally more efficient.)
      */
     @Override
-    public String toString() { return new String(b,0,i); }
+    public String toString() {
+        return new String(b, 0, i);
+    }
 
     /**
      * Returns the length of the word resulting from the stemming process.
      */
-    public int getResultLength() { return i; }
+    public int getResultLength() {
+        return i;
+    }
 
     /**
      * Returns a reference to a character buffer containing the results of
      * the stemming process.  You also need to consult getResultLength()
      * to determine the length of the result.
      */
-    public char[] getResultBuffer() { return b; }
+    public char[] getResultBuffer() {
+        return b;
+    }
 
     /* cons(i) is true <=> b[i] is a consonant. */
 
     private final boolean cons(int i) {
         switch (b[i]) {
-            case 'a': case 'e': case 'i': case 'o': case 'u':
+            case 'a':
+            case 'e':
+            case 'i':
+            case 'o':
+            case 'u':
                 return false;
             case 'y':
-                return (i==k0) ? true : !cons(i-1);
+                return (i == k0) ? true : !cons(i - 1);
             default:
                 return true;
         }
@@ -134,16 +145,16 @@ public class PorterStemmer implements Stemmer
     private final int m() {
         int n = 0;
         int i = k0;
-        while(true) {
+        while (true) {
             if (i > j)
                 return n;
-            if (! cons(i))
+            if (!cons(i))
                 break;
             i++;
         }
         i++;
-        while(true) {
-            while(true) {
+        while (true) {
+            while (true) {
                 if (i > j)
                     return n;
                 if (cons(i))
@@ -152,10 +163,10 @@ public class PorterStemmer implements Stemmer
             }
             i++;
             n++;
-            while(true) {
+            while (true) {
                 if (i > j)
                     return n;
-                if (! cons(i))
+                if (!cons(i))
                     break;
                 i++;
             }
@@ -168,7 +179,7 @@ public class PorterStemmer implements Stemmer
     private final boolean vowelinstem() {
         int i;
         for (i = k0; i <= j; i++)
-            if (! cons(i))
+            if (!cons(i))
                 return true;
         return false;
     }
@@ -176,9 +187,9 @@ public class PorterStemmer implements Stemmer
     /* doublec(j) is true <=> j,(j-1) contain a double consonant. */
 
     private final boolean doublec(int j) {
-        if (j < k0+1)
+        if (j < k0 + 1)
             return false;
-        if (b[j] != b[j-1])
+        if (b[j] != b[j - 1])
             return false;
         return cons(j);
     }
@@ -191,7 +202,7 @@ public class PorterStemmer implements Stemmer
   */
 
     private final boolean cvc(int i) {
-        if (i < k0+2 || !cons(i) || cons(i-1) || !cons(i-2))
+        if (i < k0 + 2 || !cons(i) || cons(i - 1) || !cons(i - 2))
             return false;
         else {
             int ch = b[i];
@@ -202,13 +213,13 @@ public class PorterStemmer implements Stemmer
 
     private final boolean ends(String s) {
         int l = s.length();
-        int o = k-l+1;
+        int o = k - l + 1;
         if (o < k0)
             return false;
         for (int i = 0; i < l; i++)
-            if (b[o+i] != s.charAt(i))
+            if (b[o + i] != s.charAt(i))
                 return false;
-        j = k-l;
+        j = k - l;
         return true;
     }
 
@@ -217,16 +228,18 @@ public class PorterStemmer implements Stemmer
 
     void setto(String s) {
         int l = s.length();
-        int o = j+1;
+        int o = j + 1;
         for (int i = 0; i < l; i++)
-            b[o+i] = s.charAt(i);
-        k = j+l;
+            b[o + i] = s.charAt(i);
+        k = j + l;
         dirty = true;
     }
 
     /* r(s) is used further down. */
 
-    void r(String s) { if (m() > 0) setto(s); }
+    void r(String s) {
+        if (m() > 0) setto(s);
+    }
 
   /* step1() gets rid of plurals and -ed or -ing. e.g.
            caresses  ->  caress
@@ -249,13 +262,12 @@ public class PorterStemmer implements Stemmer
         if (b[k] == 's') {
             if (ends("sses")) k -= 2;
             else if (ends("ies")) setto("i");
-            else if (b[k-1] != 's') k--;
+            else if (b[k - 1] != 's') k--;
         }
         if (ends("eed")) {
             if (m() > 0)
                 k--;
-        }
-        else if ((ends("ed") || ends("ing")) && vowelinstem()) {
+        } else if ((ends("ed") || ends("ing")) && vowelinstem()) {
             k = j;
             if (ends("at")) setto("ate");
             else if (ends("bl")) setto("ble");
@@ -264,8 +276,7 @@ public class PorterStemmer implements Stemmer
                 int ch = b[k--];
                 if (ch == 'l' || ch == 's' || ch == 'z')
                     k++;
-            }
-            else if (m() == 1 && cvc(k))
+            } else if (m() == 1 && cvc(k))
                 setto("e");
         }
     }
@@ -285,43 +296,106 @@ public class PorterStemmer implements Stemmer
 
     private final void step3() {
         if (k == k0) return; /* For Bug 1 */
-        switch (b[k-1]) {
+        switch (b[k - 1]) {
             case 'a':
-                if (ends("ational")) { r("ate"); break; }
-                if (ends("tional")) { r("tion"); break; }
+                if (ends("ational")) {
+                    r("ate");
+                    break;
+                }
+                if (ends("tional")) {
+                    r("tion");
+                    break;
+                }
                 break;
             case 'c':
-                if (ends("enci")) { r("ence"); break; }
-                if (ends("anci")) { r("ance"); break; }
+                if (ends("enci")) {
+                    r("ence");
+                    break;
+                }
+                if (ends("anci")) {
+                    r("ance");
+                    break;
+                }
                 break;
             case 'e':
-                if (ends("izer")) { r("ize"); break; }
+                if (ends("izer")) {
+                    r("ize");
+                    break;
+                }
                 break;
             case 'l':
-                if (ends("bli")) { r("ble"); break; }
-                if (ends("alli")) { r("al"); break; }
-                if (ends("entli")) { r("ent"); break; }
-                if (ends("eli")) { r("e"); break; }
-                if (ends("ousli")) { r("ous"); break; }
+                if (ends("bli")) {
+                    r("ble");
+                    break;
+                }
+                if (ends("alli")) {
+                    r("al");
+                    break;
+                }
+                if (ends("entli")) {
+                    r("ent");
+                    break;
+                }
+                if (ends("eli")) {
+                    r("e");
+                    break;
+                }
+                if (ends("ousli")) {
+                    r("ous");
+                    break;
+                }
                 break;
             case 'o':
-                if (ends("ization")) { r("ize"); break; }
-                if (ends("ation")) { r("ate"); break; }
-                if (ends("ator")) { r("ate"); break; }
+                if (ends("ization")) {
+                    r("ize");
+                    break;
+                }
+                if (ends("ation")) {
+                    r("ate");
+                    break;
+                }
+                if (ends("ator")) {
+                    r("ate");
+                    break;
+                }
                 break;
             case 's':
-                if (ends("alism")) { r("al"); break; }
-                if (ends("iveness")) { r("ive"); break; }
-                if (ends("fulness")) { r("ful"); break; }
-                if (ends("ousness")) { r("ous"); break; }
+                if (ends("alism")) {
+                    r("al");
+                    break;
+                }
+                if (ends("iveness")) {
+                    r("ive");
+                    break;
+                }
+                if (ends("fulness")) {
+                    r("ful");
+                    break;
+                }
+                if (ends("ousness")) {
+                    r("ous");
+                    break;
+                }
                 break;
             case 't':
-                if (ends("aliti")) { r("al"); break; }
-                if (ends("iviti")) { r("ive"); break; }
-                if (ends("biliti")) { r("ble"); break; }
+                if (ends("aliti")) {
+                    r("al");
+                    break;
+                }
+                if (ends("iviti")) {
+                    r("ive");
+                    break;
+                }
+                if (ends("biliti")) {
+                    r("ble");
+                    break;
+                }
                 break;
             case 'g':
-                if (ends("logi")) { r("log"); break; }
+                if (ends("logi")) {
+                    r("log");
+                    break;
+                }
         }
     }
 
@@ -330,19 +404,40 @@ public class PorterStemmer implements Stemmer
     private final void step4() {
         switch (b[k]) {
             case 'e':
-                if (ends("icate")) { r("ic"); break; }
-                if (ends("ative")) { r(""); break; }
-                if (ends("alize")) { r("al"); break; }
+                if (ends("icate")) {
+                    r("ic");
+                    break;
+                }
+                if (ends("ative")) {
+                    r("");
+                    break;
+                }
+                if (ends("alize")) {
+                    r("al");
+                    break;
+                }
                 break;
             case 'i':
-                if (ends("iciti")) { r("ic"); break; }
+                if (ends("iciti")) {
+                    r("ic");
+                    break;
+                }
                 break;
             case 'l':
-                if (ends("ical")) { r("ic"); break; }
-                if (ends("ful")) { r(""); break; }
+                if (ends("ical")) {
+                    r("ic");
+                    break;
+                }
+                if (ends("ful")) {
+                    r("");
+                    break;
+                }
                 break;
             case 's':
-                if (ends("ness")) { r(""); break; }
+                if (ends("ness")) {
+                    r("");
+                    break;
+                }
                 break;
         }
     }
@@ -351,7 +446,7 @@ public class PorterStemmer implements Stemmer
 
     private final void step5() {
         if (k == k0) return; /* for Bug 1 */
-        switch (b[k-1]) {
+        switch (b[k - 1]) {
             case 'a':
                 if (ends("al")) break;
                 return;
@@ -360,12 +455,15 @@ public class PorterStemmer implements Stemmer
                 if (ends("ence")) break;
                 return;
             case 'e':
-                if (ends("er")) break; return;
+                if (ends("er")) break;
+                return;
             case 'i':
-                if (ends("ic")) break; return;
+                if (ends("ic")) break;
+                return;
             case 'l':
                 if (ends("able")) break;
-                if (ends("ible")) break; return;
+                if (ends("ible")) break;
+                return;
             case 'n':
                 if (ends("ant")) break;
                 if (ends("ement")) break;
@@ -408,7 +506,7 @@ public class PorterStemmer implements Stemmer
         j = k;
         if (b[k] == 'e') {
             int a = m();
-            if (a > 1 || a == 1 && !cvc(k-1))
+            if (a > 1 || a == 1 && !cvc(k - 1))
                 k--;
         }
         if (b[k] == 'l' && doublec(k) && m() > 1)
@@ -470,14 +568,19 @@ public class PorterStemmer implements Stemmer
     public boolean stem(int i0) {
         k = i - 1;
         k0 = i0;
-        if (k > k0+1) {
-            step1(); step2(); step3(); step4(); step5(); step6();
+        if (k > k0 + 1) {
+            step1();
+            step2();
+            step3();
+            step4();
+            step5();
+            step6();
         }
         // Also, a word is considered dirty if we lopped off letters
         // Thanks to Ifigenia Vairelles for pointing this out.
-        if (i != k+1)
+        if (i != k + 1)
             dirty = true;
-        i = k+1;
+        i = k + 1;
         return dirty;
     }
 

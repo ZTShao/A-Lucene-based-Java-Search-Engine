@@ -58,7 +58,7 @@ public class InvertedIndexManager {
     Compressor naivePositionalSizeCompressor = new NaiveCompressor();
     private int docNum;   //just record to detect when to flush,local docID
     private int segNum;
-
+    private final String nullString = "";
 
     private InvertedIndexManager(String indexFolder, Analyzer analyzer) {
         this.indexFolder = indexFolder;
@@ -126,11 +126,10 @@ public class InvertedIndexManager {
      * @param document
      */
     public void addDocument(Document document) {
-
         checkNotNull(document);
         documentMap.put(docNum, document);
         String docText = document.getText();
-        if(document.getText().equals("")) return;
+        if (document.getText().equals(nullString)) return;
         List<String> docWords = analyzer.analyze(docText);
         Map<String, List<Integer>> positionMap = new HashMap<>();
         int position = 0;
@@ -174,12 +173,10 @@ public class InvertedIndexManager {
         Set<String> keyWords = invertedList.keySet();
 
         Path dicFilePath = Paths.get(dicPath);
-        PageFileChannel dicPageFileChannel = PageFileChannel.createOrOpen(dicFilePath);
-
         Path listFilePath = Paths.get(listFilePathBuilder(segNum));
-        PageFileChannel listPageFileChannel = PageFileChannel.createOrOpen(listFilePath);
-
         Path positionFilePath = Paths.get(positionalFilePathBuilder(segNum));
+        PageFileChannel dicPageFileChannel = PageFileChannel.createOrOpen(dicFilePath);
+        PageFileChannel listPageFileChannel = PageFileChannel.createOrOpen(listFilePath);
         PageFileChannel positionalPageFileChannel = PageFileChannel.createOrOpen(positionFilePath);
 
         ByteBuffer dicByteBuffer = ByteBuffer.allocate(PAGE_SIZE);
@@ -211,7 +208,7 @@ public class InvertedIndexManager {
             byte[] positionalOffsetByte = compressor.encode(positionalOffsetForEachKeyword);
             putAllBytes(invertedListByte, invertedListByteBuffer, listPageFileChannel);
             putAllBytes(positionalOffsetByte, invertedListByteBuffer, listPageFileChannel);
-            putAllBytes( naivePositionalSizeCompressor.encode(positionalListSize),invertedListByteBuffer,listPageFileChannel);
+            putAllBytes(naivePositionalSizeCompressor.encode(positionalListSize), invertedListByteBuffer, listPageFileChannel);
 
 
             int dicBlockLength = byteArray.length + metaDataLength;
@@ -234,34 +231,40 @@ public class InvertedIndexManager {
                     dicPageFileChannel.appendPage(dicByteBuffer);
                     dicByteBuffer = ByteBuffer.allocate(PAGE_SIZE);
                     dicByteBuffer.putInt(byteArray.length);
-                    if(dicByteBuffer.remaining()<byteArray.length){
+                    if (dicByteBuffer.remaining() < byteArray.length) {
                         dicPageFileChannel.appendPage(dicByteBuffer);
-                        dicByteBuffer = ByteBuffer.allocate(PAGE_SIZE);;
+                        dicByteBuffer = ByteBuffer.allocate(PAGE_SIZE);
+                        ;
                     }
                     dicByteBuffer.put(byteArray);
-                    if(dicByteBuffer.remaining()<4){
+                    if (dicByteBuffer.remaining() < 4) {
                         dicPageFileChannel.appendPage(dicByteBuffer);
-                        dicByteBuffer = ByteBuffer.allocate(PAGE_SIZE);;
+                        dicByteBuffer = ByteBuffer.allocate(PAGE_SIZE);
+                        ;
                     }
                     dicByteBuffer.putInt(listOffset);
-                    if(dicByteBuffer.remaining()<4){
+                    if (dicByteBuffer.remaining() < 4) {
                         dicPageFileChannel.appendPage(dicByteBuffer);
-                        dicByteBuffer = ByteBuffer.allocate(PAGE_SIZE);;
+                        dicByteBuffer = ByteBuffer.allocate(PAGE_SIZE);
+                        ;
                     }
                     dicByteBuffer.putInt(docList.size());
-                    if(dicByteBuffer.remaining()<4){
+                    if (dicByteBuffer.remaining() < 4) {
                         dicPageFileChannel.appendPage(dicByteBuffer);
-                        dicByteBuffer = ByteBuffer.allocate(PAGE_SIZE);;
+                        dicByteBuffer = ByteBuffer.allocate(PAGE_SIZE);
+                        ;
                     }
                     dicByteBuffer.putInt(invertedListByteLength);
-                    if(dicByteBuffer.remaining()<4){
+                    if (dicByteBuffer.remaining() < 4) {
                         dicPageFileChannel.appendPage(dicByteBuffer);
-                        dicByteBuffer = ByteBuffer.allocate(PAGE_SIZE);;
+                        dicByteBuffer = ByteBuffer.allocate(PAGE_SIZE);
+                        ;
                     }
                     dicByteBuffer.putInt(positionalOffsetByte.length);
-                    if(dicByteBuffer.remaining()<4){
+                    if (dicByteBuffer.remaining() < 4) {
                         dicPageFileChannel.appendPage(dicByteBuffer);
-                        dicByteBuffer = ByteBuffer.allocate(PAGE_SIZE);;
+                        dicByteBuffer = ByteBuffer.allocate(PAGE_SIZE);
+                        ;
                     }
                 }
             } else {
@@ -272,7 +275,7 @@ public class InvertedIndexManager {
                 dicByteBuffer.putInt(invertedListByteLength);
                 dicByteBuffer.putInt(positionalOffsetByte.length);
             }
-            listOffset += invertedListByteLength + positionalOffsetByte.length + positionalListSize.size()*4;
+            listOffset += invertedListByteLength + positionalOffsetByte.length + positionalListSize.size() * 4;
         }
 
         dicPageFileChannel.appendPage(dicByteBuffer);
@@ -317,13 +320,13 @@ public class InvertedIndexManager {
             String tempListFile = indexFolder + "/tempsegmentforList";
             String tempPosFile = indexFolder + "/tempsegmentforPos";
 
-
             Map<String, List<Integer>> dictVal1 = readDict(dicFile1);
             Map<String, List<Integer>> dictVal2 = readDict(dicFile2);
             Set<String> keywords1 = dictVal1.keySet();
             Set<String> keywords2 = dictVal2.keySet();
             Iterator<String> wordIt1 = keywords1.iterator();
             Iterator<String> wordIt2 = keywords2.iterator();
+
             while (wordIt1.hasNext()) keyWords.add(wordIt1.next());
             while (wordIt2.hasNext()) keyWords.add(wordIt2.next());
 
@@ -343,49 +346,48 @@ public class InvertedIndexManager {
             int[] listOffset = {0};
             int posOffset = 0;
             for (String keyword : keyWords) {
-                //two lists: one is the inverted list, the other is the pointer list
                 List<List<Integer>> docList1 = readDocList(keyword, dictVal1, listpageFileChannel1);
                 List<List<Integer>> docList2 = readDocList(keyword, dictVal2, listpageFileChannel2);
 
-                List<Integer> posSizeList1 = readPosSizeList(keyword,dictVal1,listpageFileChannel1);
-                List<Integer> posSizeList2 = readPosSizeList(keyword,dictVal2,listpageFileChannel2);
+                List<Integer> posSizeList1 = readPosSizeList(keyword, dictVal1, listpageFileChannel1);
+                List<Integer> posSizeList2 = readPosSizeList(keyword, dictVal2, listpageFileChannel2);
 
-                for(int j = 0;docList1 != null && j<docList1.get(1).size()-1;j++){
-                    byte[] posList1 = readPosList(docList1.get(1).get(j),docList1.get(1).get(j+1), pospageFileChannel1);
+                for (int j = 0; docList1 != null && j < docList1.get(1).size() - 1; j++) {
+                    byte[] posList1 = readPosList(docList1.get(1).get(j), docList1.get(1).get(j + 1), pospageFileChannel1);
                     putAllBytes(posList1, posByteBuffer, pospageFileChannel);
                 }
-                for(int j = 0;docList2!=null && j<docList2.get(1).size()-1;j++){
-                    byte[] posList2 = readPosList(docList2.get(1).get(j),docList2.get(1).get(j+1), pospageFileChannel2);
+                for (int j = 0; docList2 != null && j < docList2.get(1).size() - 1; j++) {
+                    byte[] posList2 = readPosList(docList2.get(1).get(j), docList2.get(1).get(j + 1), pospageFileChannel2);
                     putAllBytes(posList2, posByteBuffer, pospageFileChannel);
                 }
 
                 if (docList2 == null) {
                     if (docList1 == null) continue;
-                    for(int k=0;k<docList1.get(1).size()-1;k++){
+                    for (int k = 0; k < docList1.get(1).size() - 1; k++) {
                         int temp = docList1.get(1).get(k);
                         docList1.get(1).set(k, posOffset);
                         posOffset += docList1.get(1).get(k + 1) - temp;
                     }
-                    docList1.get(1).set(docList1.get(1).size()-1, posOffset);
-                    List<Integer> listBytes =  writeDocList(docList1, listByteBuffer, listpageFileChannel,posSizeList1);
-                    dictbyteBuffer = writeDict(keyword, dictpageFileChannel, dictbyteBuffer, listBytes,listOffset,
+                    docList1.get(1).set(docList1.get(1).size() - 1, posOffset);
+                    List<Integer> listBytes = writeDocList(docList1, listByteBuffer, listpageFileChannel, posSizeList1);
+                    dictbyteBuffer = writeDict(keyword, dictpageFileChannel, dictbyteBuffer, listBytes, listOffset,
                             docList1.get(0).size());
                     continue;
                 }
-                if(docList1==null){
+                if (docList1 == null) {
                     docList1 = docList2;
-                    posSizeList1=posSizeList2;
+                    posSizeList1 = posSizeList2;
                     for (int k = 0; k < docList1.get(1).size() - 1; k++) {
                         int listOrigin = docList1.get(0).get(k);
                         int newNum = listOrigin + offset;
-                        docList1.get(0).set(k,newNum);
+                        docList1.get(0).set(k, newNum);
                         int temp = docList1.get(1).get(k);
                         docList1.get(1).set(k, posOffset);
                         posOffset += docList1.get(1).get(k + 1) - temp;
                         inDiskDocStore1.addDocument(newNum, inDiskDocStore2.getDocument(listOrigin));
                     }
-                    docList1.get(1).set(docList1.get(1).size()-1,posOffset);
-                }else{
+                    docList1.get(1).set(docList1.get(1).size() - 1, posOffset);
+                } else {
                     for (int k = 0; k < docList1.get(1).size() - 1; k++) {
                         int temp = docList1.get(1).get(k);
                         docList1.get(1).set(k, posOffset);
@@ -407,8 +409,8 @@ public class InvertedIndexManager {
                     }
                 }
 
-                List<Integer> listBytes = writeDocList(docList1, listByteBuffer, listpageFileChannel,posSizeList1);
-                dictbyteBuffer = writeDict(keyword, dictpageFileChannel, dictbyteBuffer, listBytes,listOffset,docList1.get(0).size());
+                List<Integer> listBytes = writeDocList(docList1, listByteBuffer, listpageFileChannel, posSizeList1);
+                dictbyteBuffer = writeDict(keyword, dictpageFileChannel, dictbyteBuffer, listBytes, listOffset, docList1.get(0).size());
             }
             dictpageFileChannel.appendPage(dictbyteBuffer);
             dictpageFileChannel.close();
@@ -606,31 +608,30 @@ public class InvertedIndexManager {
         Table<String, Integer, List<Integer>> positionsforTest = HashBasedTable.create();
         String dictFileName = dicFilePathBuilder(segmentNum);
         Map<String, List<Integer>> dictVal = readDict(dictFileName);
-        if(dictVal.size()==0){
+        if (dictVal.size() == 0) {
             return null;
         }
 
         PageFileChannel listpageFileChannel = PageFileChannel.createOrOpen(Paths.get(listFilePathBuilder(segmentNum)));
         PageFileChannel pospageFileChannel = PageFileChannel.createOrOpen(Paths.get(positionalFilePathBuilder(segmentNum)));
         int[] posLength = new int[1];
-        Map<String,List<List<Integer>>> allDocList = readAllDocList(dictVal,listpageFileChannel,posLength);
-        byte[] allPosBytes = readAllPosList(pospageFileChannel,posLength);
+        Map<String, List<List<Integer>>> allDocList = readAllDocList(dictVal, listpageFileChannel, posLength);
+        byte[] allPosBytes = readAllPosList(pospageFileChannel, posLength);
 
-
-        for(String keyword:dictVal.keySet()){
+        for (String keyword : dictVal.keySet()) {
             List<List<Integer>> docList = allDocList.get(keyword);
-            invertedListsforTest.put(keyword,docList.get(0));
-            for(int i=0;i<docList.get(0).size();i++){
+            invertedListsforTest.put(keyword, docList.get(0));
+            for (int i = 0; i < docList.get(0).size(); i++) {
                 int start = docList.get(1).get(i);
-                int end =  docList.get(1).get(i+1);
-                int onePosLen = end-start;
+                int end = docList.get(1).get(i + 1);
+                int onePosLen = end - start;
                 byte[] posListByte = new byte[onePosLen];
-                for(int j=0;j<onePosLen;j++){
-                    posListByte[j] = allPosBytes[start+j];
+                for (int j = 0; j < onePosLen; j++) {
+                    posListByte[j] = allPosBytes[start + j];
                 }
 
                 List<Integer> posList = compressor.decode(posListByte);
-                positionsforTest.put(keyword,docList.get(0).get(i),posList);
+                positionsforTest.put(keyword, docList.get(0).get(i), posList);
             }
         }
         DocumentStore inDiskDocStore = MapdbDocStore.createOrOpen(MapdbPathBuilder(segmentNum));
@@ -643,7 +644,7 @@ public class InvertedIndexManager {
         listpageFileChannel.close();
         pospageFileChannel.close();
 
-        PositionalIndexSegmentForTest result =new PositionalIndexSegmentForTest(invertedListsforTest,documentsforTest,
+        PositionalIndexSegmentForTest result = new PositionalIndexSegmentForTest(invertedListsforTest, documentsforTest,
                 positionsforTest);
         return result;
     }
@@ -651,20 +652,20 @@ public class InvertedIndexManager {
     /**
      * Performs top-K ranked search using TF-IDF.
      * Returns an iterator that returns the top K documents with highest TF-IDF scores.
-     *
+     * <p>
      * Each element is a pair of <Document, Double (TF-IDF Score)>.
-     *
+     * <p>
      * If parameter `topK` is null, then returns all the matching documents.
-     *
+     * <p>
      * Unlike Boolean Query and Phrase Query where order of the documents doesn't matter,
      * for ranked search, order of the document returned by the iterator matters.
      *
      * @param keywords, a list of keywords in the query
-     * @param topK, number of top documents weighted by TF-IDF, all documents if topK is null
+     * @param topK,     number of top documents weighted by TF-IDF, all documents if topK is null
      * @return a iterator of top-k ordered documents matching the query
      */
-    public Iterator<Pair<Document, Double>> searchTfIdf(List<String> keywords, Integer topK){
-        return searchTfIdfHelper(keywords,topK).iterator();
+    public Iterator<Pair<Document, Double>> searchTfIdf(List<String> keywords, Integer topK) {
+        return searchTfIdfHelper(keywords, topK).iterator();
     }
 
     /**
@@ -673,7 +674,7 @@ public class InvertedIndexManager {
     public int getNumDocuments(int segmentNum) {
         String documentStorePath = MapdbPathBuilder(segmentNum);
         DocumentStore documentStore = MapdbDocStore.createOrOpenReadOnly(documentStorePath);
-        int documentNum = (int)documentStore.size();
+        int documentNum = (int) documentStore.size();
         documentStore.close();
         return documentNum;
     }
@@ -683,8 +684,8 @@ public class InvertedIndexManager {
      * The token should be already analyzed by the analyzer. The analyzer shouldn't be applied again.
      */
     public int getDocumentFrequency(int segmentNum, String token) {
-        Map<String,List<Integer>> dict = readDict(dicFilePathBuilder(segmentNum));
-        if(dict.get(token)==null) return 0;
+        Map<String, List<Integer>> dict = readDict(dicFilePathBuilder(segmentNum));
+        if (dict.get(token) == null) return 0;
         return dict.get(token).get(1);    // get the list length
 
     }
@@ -693,7 +694,7 @@ public class InvertedIndexManager {
      * Private functions that might be used.
      */
     private String MapdbPathBuilder(int dbNum) {
-        return indexFolder +"/"+ "documentStore" + dbNum + ".db";
+        return indexFolder + "/" + "documentStore" + dbNum + ".db";
     }
 
     private Map<String, List<Integer>> readDict(String filename) {
@@ -707,7 +708,7 @@ public class InvertedIndexManager {
         int wordsNum = byteBuffer.getInt();
         int alreadyRead = 0;
         while (alreadyRead < wordsNum) {
-            if (byteBuffer.position() > PAGE_SIZE-4) {
+            if (byteBuffer.position() > PAGE_SIZE - 4) {
                 byteBuffer = pageFileChannel.readPage(++curPage);
             }
             List<Integer> keywordData = new ArrayList<>();
@@ -715,10 +716,6 @@ public class InvertedIndexManager {
             if (curWordLength == 0) {
                 byteBuffer = pageFileChannel.readPage(++curPage);
                 curWordLength = byteBuffer.getInt();
-/*                if(curWordLength>1000){
-                    System.out.println(filename);
-                    System.out.println(curWordLength);
-                }*/
                 if (curWordLength == PAGE_SIZE) {
                     byteBuffer = pageFileChannel.readPage(++curPage);
                     byte[] wordByte = new byte[curWordLength];
@@ -737,12 +734,12 @@ public class InvertedIndexManager {
             byte[] wordByte = new byte[curWordLength];
             byteBuffer.get(wordByte, 0, curWordLength);
             String word = new String(wordByte, StandardCharsets.UTF_8);
-            if(byteBuffer.position()>PAGE_SIZE-4){
+            if (byteBuffer.position() > PAGE_SIZE - 4) {
                 byteBuffer = pageFileChannel.readPage(++curPage);
             }
             keywordData.add(byteBuffer.getInt());
             keywordData.add(byteBuffer.getInt());
-            if(byteBuffer.position()>PAGE_SIZE-4){
+            if (byteBuffer.position() > PAGE_SIZE - 4) {
                 byteBuffer = pageFileChannel.readPage(++curPage);
             }
             keywordData.add(byteBuffer.getInt());
@@ -754,19 +751,19 @@ public class InvertedIndexManager {
         return dictValues;
     }
 
-    private List<Integer> readPosSizeList(String word,Map<String, List<Integer>> dictValues,
-                                          PageFileChannel pageFileChannel){
+    private List<Integer> readPosSizeList(String word, Map<String, List<Integer>> dictValues,
+                                          PageFileChannel pageFileChannel) {
         if (!dictValues.containsKey(word)) {
             return null;
         }
         List<Integer> metaData = dictValues.get(word);
         // The structure of dict: keyword length + keyword + inverted list offset(bytes) + inverted list size(integer length)+
         //  inverted list length(bytes) + positional list offsets length(bytes)
-        int offset =  metaData.get(0)+metaData.get(2)+metaData.get(3);
+        int offset = metaData.get(0) + metaData.get(2) + metaData.get(3);
         int listPage = offset / PAGE_SIZE;
         int inPageOffset = offset % PAGE_SIZE;
 
-        int length = metaData.get(1)*4;
+        int length = metaData.get(1) * 4;
         ByteBuffer byteBuffer = pageFileChannel.readPage(listPage);
         byteBuffer.position(inPageOffset);
         byte[] encodedList = new byte[length];
@@ -828,7 +825,6 @@ public class InvertedIndexManager {
         List<Integer> metaData = dictValues.get(word);
         int listPage = metaData.get(0) / PAGE_SIZE;
         int inPageOffset = metaData.get(0) % PAGE_SIZE;
-
         int listByteLength = metaData.get(2);
 
         ByteBuffer byteBuffer = pageFileChannel.readPage(listPage);
@@ -843,15 +839,14 @@ public class InvertedIndexManager {
         return compressor.decode(encodedList);
     }
 
-
-    private byte[] readPosList(int offset,int nextOffset, PageFileChannel pageFileChannel) {
+    private byte[] readPosList(int offset, int nextOffset, PageFileChannel pageFileChannel) {
 
         int pageOffset = offset / PAGE_SIZE;
         int inpageOffset = offset % PAGE_SIZE;
 
         ByteBuffer byteBuffer = pageFileChannel.readPage(pageOffset);
         byteBuffer.position(inpageOffset);
-        int length = nextOffset-offset;
+        int length = nextOffset - offset;
         byte[] posBytes = new byte[length];
         for (int i = 0; i < length; i++) {
             posBytes[i] = byteBuffer.get();
@@ -863,7 +858,7 @@ public class InvertedIndexManager {
     }
 
     private ByteBuffer writeDict(String keyword, PageFileChannel pageFileChannel, ByteBuffer byteBuffer,
-                                 List<Integer> listBytes, int[] listOffset,int listLength) {
+                                 List<Integer> listBytes, int[] listOffset, int listLength) {
         //write keywords dictionary into a file
         //in case of the length of one keyword is too large
         byte[] byteArray = keyword.getBytes();
@@ -885,7 +880,7 @@ public class InvertedIndexManager {
                 byteBuffer.putInt(listLength);
                 byteBuffer.putInt(listBytes.get(0));
                 byteBuffer.putInt(listBytes.get(1));
-                listOffset[0] +=listBytes.get(0)+listBytes.get(1)+listLength*4;
+                listOffset[0] += listBytes.get(0) + listBytes.get(1) + listLength * 4;
                 return byteBuffer;
             }
             pageFileChannel.appendPage(byteBuffer);
@@ -896,7 +891,7 @@ public class InvertedIndexManager {
             byteBuffer.putInt(listLength);
             byteBuffer.putInt(listBytes.get(0));
             byteBuffer.putInt(listBytes.get(1));
-            listOffset[0] += listBytes.get(0) + listBytes.get(1) + listLength*4;
+            listOffset[0] += listBytes.get(0) + listBytes.get(1) + listLength * 4;
         } else {
             byteBuffer.putInt(byteArray.length);
             byteBuffer.put(byteArray);
@@ -904,13 +899,13 @@ public class InvertedIndexManager {
             byteBuffer.putInt(listLength);
             byteBuffer.putInt(listBytes.get(0));
             byteBuffer.putInt(listBytes.get(1));
-            listOffset[0] += listBytes.get(0) + listBytes.get(1) + listLength*4;
+            listOffset[0] += listBytes.get(0) + listBytes.get(1) + listLength * 4;
         }
         return byteBuffer;
     }
 
     private List<Integer> writeDocList(List<List<Integer>> docList, ByteBuffer byteBuffer, PageFileChannel pageFileChannel,
-                                      List<Integer> posSizeList) {
+                                       List<Integer> posSizeList) {
         //write list into segment
         List<Integer> ret = new ArrayList<>();
         for (int i = 0; i < docList.size(); i++) {
@@ -919,8 +914,7 @@ public class InvertedIndexManager {
             putAllBytes(listBytes, byteBuffer, pageFileChannel);
         }
         byte[] posSizeListBytes = naivePositionalSizeCompressor.encode(posSizeList);
-        putAllBytes(posSizeListBytes,byteBuffer,pageFileChannel);
-
+        putAllBytes(posSizeListBytes, byteBuffer, pageFileChannel);
         return ret;
     }
 
@@ -935,15 +929,15 @@ public class InvertedIndexManager {
     }
 
     private String listFilePathBuilder(int segNum) {
-        return indexFolder + "/"+"invertedSegment" + segNum;
+        return indexFolder + "/" + "invertedSegment" + segNum;
     }
 
     private String dicFilePathBuilder(int segNum) {
-        return indexFolder + "/"+"dicSegment" + segNum;
+        return indexFolder + "/" + "dicSegment" + segNum;
     }
 
     private String positionalFilePathBuilder(int segNum) {
-        return indexFolder +"/"+ "positionalSegment" + segNum;
+        return indexFolder + "/" + "positionalSegment" + segNum;
     }
 
     private List<Document> searchDocInSegment(String keyword, int segment) {
@@ -952,9 +946,9 @@ public class InvertedIndexManager {
 
         Map<String, List<Integer>> dicValue = readDict(filename);
         PageFileChannel p = PageFileChannel.createOrOpen(Paths.get(listFilePathBuilder(segment)));
-        List<Integer> docIdList = readInvertedList(keyword,dicValue,p);
+        List<Integer> docIdList = readInvertedList(keyword, dicValue, p);
         DocumentStore documentStore = MapdbDocStore.createOrOpen(MapdbPathBuilder(segment));
-        if (docIdList!=null) {
+        if (docIdList != null) {
             for (int i : docIdList) {
                 documentList.add(documentStore.getDocument(i));
             }
@@ -1004,27 +998,27 @@ public class InvertedIndexManager {
     }
 
 
-    private Map<String,List<List<Integer>>> readAllDocList(Map<String,List<Integer>> dictVal,
-                                                           PageFileChannel pageFileChannel,
-                                                           int[] posLength){
-        Map<String,List<List<Integer>>> result = new HashMap<>();
+    private Map<String, List<List<Integer>>> readAllDocList(Map<String, List<Integer>> dictVal,
+                                                            PageFileChannel pageFileChannel,
+                                                            int[] posLength) {
+        Map<String, List<List<Integer>>> result = new HashMap<>();
         int totalLength = 0;
-        for(String word:dictVal.keySet()){
+        for (String word : dictVal.keySet()) {
             List<Integer> metaData = dictVal.get(word);
-            totalLength+=metaData.get(2);
-            totalLength+=metaData.get(3);
+            totalLength += metaData.get(2);
+            totalLength += metaData.get(3);
         }
         byte[] allBytes = new byte[totalLength];
         int listPage = 0;
         ByteBuffer byteBuffer = pageFileChannel.readPage(listPage);
 
-        for(int i=0;i<totalLength;i++){
+        for (int i = 0; i < totalLength; i++) {
             allBytes[i] = byteBuffer.get();
             if (byteBuffer.position() == PAGE_SIZE) {
                 byteBuffer = pageFileChannel.readPage(++listPage);
             }
         }
-        for(String word:dictVal.keySet()) {
+        for (String word : dictVal.keySet()) {
             List<List<Integer>> ret = new ArrayList<>();
             List<Integer> intDocList;
             List<Integer> pointerList;
@@ -1035,23 +1029,23 @@ public class InvertedIndexManager {
 
             byte[] encodedList = new byte[listByteLength];
             for (int i = 0; i < listByteLength; i++) {
-                encodedList[i] = allBytes[bytesOffset+i];
+                encodedList[i] = allBytes[bytesOffset + i];
             }
             byte[] encodedPointer = new byte[pointerListLength];
             for (int i = 0; i < pointerListLength; i++) {
-                encodedPointer[i] = allBytes[bytesOffset+listByteLength+i];
+                encodedPointer[i] = allBytes[bytesOffset + listByteLength + i];
             }
             pointerList = compressor.decode(encodedPointer);
             intDocList = compressor.decode(encodedList);
             ret.add(intDocList);
             ret.add(pointerList);
-            posLength[0] = pointerList.get(pointerList.size()-1);
-            result.put(word,ret);
+            posLength[0] = pointerList.get(pointerList.size() - 1);
+            result.put(word, ret);
         }
         return result;
     }
 
-    private byte[] readAllPosList(PageFileChannel pageFileChannel,int[] totalLen){
+    private byte[] readAllPosList(PageFileChannel pageFileChannel, int[] totalLen) {
         int page = 0;
         ByteBuffer byteBuffer = pageFileChannel.readPage(page);
         byte[] posBytes = new byte[totalLen[0]];
@@ -1069,7 +1063,7 @@ public class InvertedIndexManager {
         List<Document> searchAndDocument = new ArrayList<>();
         for (int segment = 0; segment < segNum; segment++) {
             Map<String, List<Integer>> dicForThisSegment = readDict(dicFilePathBuilder(segment));
-            List<Integer> commonGroup = commonDocIDinOneSegmentAndSearch(keywords,segment,dicForThisSegment);
+            List<Integer> commonGroup = commonDocIDinOneSegmentAndSearch(keywords, segment, dicForThisSegment);
             if (commonGroup.size() != 0) {
                 DocumentStore documentStore = MapdbDocStore.createOrOpen(MapdbPathBuilder(segment));
                 for (int i : commonGroup) searchAndDocument.add(documentStore.getDocument(i));
@@ -1080,9 +1074,9 @@ public class InvertedIndexManager {
     }
 
     private List<Integer> commonDocIDinOneSegmentAndSearch(List<String> keywords, int segment,
-                                                           Map<String,List<Integer>> dicForThisSegment) {
+                                                           Map<String, List<Integer>> dicForThisSegment) {
         List<List<Integer>> docIdGroup = new ArrayList<>();
-        if (searchAndDocId(docIdGroup, keywords, segment,dicForThisSegment)) {
+        if (searchAndDocId(docIdGroup, keywords, segment, dicForThisSegment)) {
             Collections.sort(docIdGroup, new Comparator<List<Integer>>() {
                 @Override
                 public int compare(List<Integer> o1, List<Integer> o2) {
@@ -1093,11 +1087,11 @@ public class InvertedIndexManager {
         } else return new ArrayList<>();
     }
 
-    private void searchArgumentAnalyze(List<String> keywords){
+    private void searchArgumentAnalyze(List<String> keywords) {
         for (int i = 0; i < keywords.size(); i++) {
             List<String> after = analyzer.analyze(keywords.get(i));
             if (after.size() != 0) keywords.set(i, after.get(0));
-            else{
+            else {
                 keywords.remove(i);
                 i--;
             }
@@ -1122,17 +1116,17 @@ public class InvertedIndexManager {
     private List<Document> searchPhraseQueryHelper(List<String> phrase) {
         searchArgumentAnalyze(phrase);
         List<Document> phraseSearchResult = new ArrayList<>();
-        if(phrase.size()==0) return phraseSearchResult;
+        if (phrase.size() == 0) return phraseSearchResult;
         for (int segment = 0; segment < segNum; segment++) {
-            Map<String,List<Integer>> dicForThisSegment = readDict(dicFilePathBuilder(segment));
-            List<Integer> commonId = commonDocIDinOneSegmentAndSearch(phrase,segment,dicForThisSegment);
-            if(commonId.size()==0) continue;
-            else{
+            Map<String, List<Integer>> dicForThisSegment = readDict(dicFilePathBuilder(segment));
+            List<Integer> commonId = commonDocIDinOneSegmentAndSearch(phrase, segment, dicForThisSegment);
+            if (commonId.size() == 0) continue;
+            else {
                 List<Integer> resultId = new ArrayList<>();
-                for(int docID:commonId){
-                    if(exactOrderSearchSuccess(phrase,docID,dicForThisSegment,segment)) resultId.add(docID);
+                for (int docID : commonId) {
+                    if (exactOrderSearchSuccess(phrase, docID, dicForThisSegment, segment)) resultId.add(docID);
                 }
-                if(resultId.size()!=0){
+                if (resultId.size() != 0) {
                     DocumentStore documentStore = MapdbDocStore.createOrOpen(MapdbPathBuilder(segment));
                     for (int id : resultId) phraseSearchResult.add(documentStore.getDocument(id));
                     documentStore.close();
@@ -1143,62 +1137,62 @@ public class InvertedIndexManager {
     }
 
     private boolean exactOrderSearchSuccess(List<String> phrase, int docID,
-                                            Map<String,List<Integer>> dicForThisSegment,int segment){
-        List<Integer> possiblePosList = getPosList(phrase.get(0),docID,dicForThisSegment,segment);
-        for(int i=1;i<phrase.size();i++) {
-            List<Integer> posForNextWord = getPosList(phrase.get(i), docID,dicForThisSegment,segment);
+                                            Map<String, List<Integer>> dicForThisSegment, int segment) {
+        List<Integer> possiblePosList = getPosList(phrase.get(0), docID, dicForThisSegment, segment);
+        for (int i = 1; i < phrase.size(); i++) {
+            List<Integer> posForNextWord = getPosList(phrase.get(i), docID, dicForThisSegment, segment);
             for (int j = 0; j < possiblePosList.size(); j++) {
                 if (!binarySearch(possiblePosList.get(j) + i, posForNextWord)) {
                     possiblePosList.remove(j);
                     j--;
                 }
             }
-            if(possiblePosList.size()==0) return false;
+            if (possiblePosList.size() == 0) return false;
         }
         return true;
     }
 
     private List<Integer> getPosList(String keyword, int docId,
-                                     Map<String,List<Integer>> dicForThisSegment,int segment){
+                                     Map<String, List<Integer>> dicForThisSegment, int segment) {
         PageFileChannel invertedListPageFileChannel = PageFileChannel.createOrOpen(Paths.get(listFilePathBuilder(segment)));
-        List<List<Integer>> invertedAndPosList = readDocList(keyword,dicForThisSegment,invertedListPageFileChannel);
+        List<List<Integer>> invertedAndPosList = readDocList(keyword, dicForThisSegment, invertedListPageFileChannel);
         invertedListPageFileChannel.close();
-        return getPosList(docId,segment,invertedAndPosList);
+        return getPosList(docId, segment, invertedAndPosList);
     }
 
-    private List<Integer> getPosList(int docId,int segment,
-                                     List<List<Integer>> invertedAndPosList){
+    private List<Integer> getPosList(int docId, int segment,
+                                     List<List<Integer>> invertedAndPosList) {
         int index = invertedAndPosList.get(0).indexOf(docId);
         int offset = invertedAndPosList.get(1).get(index);
-        int nextOffset = invertedAndPosList.get(1).get(index+1);
+        int nextOffset = invertedAndPosList.get(1).get(index + 1);
         PageFileChannel posListPageFileChannel = PageFileChannel.createOrOpen(Paths.get(positionalFilePathBuilder(segment)));
-        byte[] positionListByte = readPosList(offset,nextOffset,posListPageFileChannel);
+        byte[] positionListByte = readPosList(offset, nextOffset, posListPageFileChannel);
         posListPageFileChannel.close();
         return compressor.decode(positionListByte);
     }
 
-    public List<Pair<Document,Double>> searchTfIdfHelper(List<String> keywords, Integer topK){
+    public List<Pair<Document, Double>> searchTfIdfHelper(List<String> keywords, Integer topK) {
         searchArgumentAnalyze(keywords);
         List<String> afterAnalyzed = keywords;
-        Map<String,Integer> wordFreq = new HashMap<>();
-        Map<String,Integer> queryWordFreq = new HashMap<>();
-        Map<String,Double> queryTfIdf = new HashMap<>();
-        Map<DocID,Double> dotProductAccumulator = new HashMap<>();
-        Map<DocID,Double> vectorLengthAccumulator = new HashMap<>();
+        Map<String, Integer> wordFreq = new HashMap<>();
+        Map<String, Integer> queryWordFreq = new HashMap<>();
+        Map<String, Double> queryTfIdf = new HashMap<>();
+        Map<DocID, Double> dotProductAccumulator = new HashMap<>();
+        Map<DocID, Double> vectorLengthAccumulator = new HashMap<>();
 
         Queue<ScoreRecord> priorityQueue;
         List<ScoreRecord> normalQueue = new ArrayList<>();
-        if(topK==null){
+        if (topK == null) {
             priorityQueue = null;
-        }else if(topK==0){
+        } else if (topK == 0) {
             return new ArrayList<>();
-        }else{
+        } else {
             priorityQueue = new PriorityQueue<>(topK, new Comparator<ScoreRecord>() {
                 @Override
                 public int compare(ScoreRecord o1, ScoreRecord o2) {
-                    if(o2.getScore()>o1.getScore()){
+                    if (o2.getScore() > o1.getScore()) {
                         return -1;
-                    }else if(o2.getScore()<o1.getScore()){
+                    } else if (o2.getScore() < o1.getScore()) {
                         return 1;
                     }
                     return 0;
@@ -1207,87 +1201,87 @@ public class InvertedIndexManager {
         }
 
         int allDocNum = 0;
-        for(int i=0;i<segNum;i++){
-            allDocNum+=getNumDocuments(i);
-            for(String keyword:afterAnalyzed){
-                int docFreq = getDocumentFrequency(i,keyword);
-                if(!wordFreq.containsKey(keyword)){
-                    wordFreq.put(keyword,docFreq);
-                }else{
+        for (int i = 0; i < segNum; i++) {
+            allDocNum += getNumDocuments(i);
+            for (String keyword : afterAnalyzed) {
+                int docFreq = getDocumentFrequency(i, keyword);
+                if (!wordFreq.containsKey(keyword)) {
+                    wordFreq.put(keyword, docFreq);
+                } else {
                     int prev = wordFreq.get(keyword);
-                    wordFreq.put(keyword,prev+docFreq);
+                    wordFreq.put(keyword, prev + docFreq);
                 }
             }
         }
-        for(String keyword:afterAnalyzed){
-            if(!queryWordFreq.containsKey(keyword)){
-                queryWordFreq.put(keyword,1);
-            }else{
+        for (String keyword : afterAnalyzed) {
+            if (!queryWordFreq.containsKey(keyword)) {
+                queryWordFreq.put(keyword, 1);
+            } else {
                 int prev = queryWordFreq.get(keyword);
-                queryWordFreq.put(keyword,prev+1);
+                queryWordFreq.put(keyword, prev + 1);
             }
         }
-        for(String keyword:wordFreq.keySet()){
+        for (String keyword : wordFreq.keySet()) {
             int prev = wordFreq.get(keyword);
-            wordFreq.put(keyword,prev/queryWordFreq.get(keyword));
+            wordFreq.put(keyword, prev / queryWordFreq.get(keyword));
         }
-        for(String keyword:queryWordFreq.keySet()){
-            double tf_idf = queryWordFreq.get(keyword)*idf(allDocNum,wordFreq.get(keyword));
-            queryTfIdf.put(keyword,tf_idf);
+        for (String keyword : queryWordFreq.keySet()) {
+            double tf_idf = queryWordFreq.get(keyword) * idf(allDocNum, wordFreq.get(keyword));
+            queryTfIdf.put(keyword, tf_idf);
         }
 
-        for(int segment=0;segment<segNum;segment++){
+        for (int segment = 0; segment < segNum; segment++) {
             PageFileChannel doclistPageFileChannel = PageFileChannel.createOrOpen(Paths.get(listFilePathBuilder(segment)));
             DocumentStore documentStore = MapdbDocStore.createOrOpen(MapdbPathBuilder(segment));
-            for(String keyword:wordFreq.keySet()){
+            for (String keyword : wordFreq.keySet()) {
 
-                Map<String,List<Integer>> dicVal = readDict(dicFilePathBuilder(segment));
+                Map<String, List<Integer>> dicVal = readDict(dicFilePathBuilder(segment));
 
-                List<List<Integer>> docList = readDocList(keyword,dicVal,doclistPageFileChannel);
-                List<Integer> posSizeList = readPosSizeList(keyword,dicVal,doclistPageFileChannel);
-                if(docList==null){
+                List<List<Integer>> docList = readDocList(keyword, dicVal, doclistPageFileChannel);
+                List<Integer> posSizeList = readPosSizeList(keyword, dicVal, doclistPageFileChannel);
+                if (docList == null) {
                     continue;
                 }
-                for(int i=0;i<docList.get(0).size();i++){
+                for (int i = 0; i < docList.get(0).size(); i++) {
 
                     int tf = posSizeList.get(i);
-                    DocID docID = new DocID(segment,docList.get(0).get(i));
-                    double tfidf = tf*idf(allDocNum,wordFreq.get(keyword));
-                    if(!dotProductAccumulator.containsKey(docID)){
-                        dotProductAccumulator.put(docID,tfidf*queryTfIdf.get(keyword));
-                        vectorLengthAccumulator.put(docID,Math.pow(tfidf,2));
-                    }else{
+                    DocID docID = new DocID(segment, docList.get(0).get(i));
+                    double tfidf = tf * idf(allDocNum, wordFreq.get(keyword));
+                    if (!dotProductAccumulator.containsKey(docID)) {
+                        dotProductAccumulator.put(docID, tfidf * queryTfIdf.get(keyword));
+                        vectorLengthAccumulator.put(docID, Math.pow(tfidf, 2));
+                    } else {
                         double prev1 = dotProductAccumulator.get(docID);
                         double prev2 = vectorLengthAccumulator.get(docID);
-                        dotProductAccumulator.put(docID,prev1+tfidf*queryTfIdf.get(keyword));
-                        vectorLengthAccumulator.put(docID,prev2+Math.pow(tfidf,2));
+                        dotProductAccumulator.put(docID, prev1 + tfidf * queryTfIdf.get(keyword));
+                        vectorLengthAccumulator.put(docID, prev2 + Math.pow(tfidf, 2));
                     }
                 }
             }
             Iterator<Integer> docIdIter = documentStore.keyIterator();
-            if(priorityQueue==null){
-                while(docIdIter.hasNext()){
-                    DocID docID = new DocID(segment,docIdIter.next());
-                    if(dotProductAccumulator.containsKey(docID)){
+            if (priorityQueue == null) {
+                while (docIdIter.hasNext()) {
+                    DocID docID = new DocID(segment, docIdIter.next());
+                    if (dotProductAccumulator.containsKey(docID)) {
                         normalQueue.add(new ScoreRecord(docID,
-                                dotProductAccumulator.get(docID)/Math.sqrt(vectorLengthAccumulator.get(docID))));
+                                dotProductAccumulator.get(docID) / Math.sqrt(vectorLengthAccumulator.get(docID))));
                     }
                 }
-            }else{
-                while(docIdIter.hasNext()){
-                    DocID docID = new DocID(segment,docIdIter.next());
+            } else {
+                while (docIdIter.hasNext()) {
+                    DocID docID = new DocID(segment, docIdIter.next());
                     double score;
-                    if(dotProductAccumulator.containsKey(docID)) {
+                    if (dotProductAccumulator.containsKey(docID)) {
                         score = dotProductAccumulator.get(docID) / Math.sqrt(vectorLengthAccumulator.get(docID));
-                    }else{
+                    } else {
                         continue;
                     }
-                    if(priorityQueue.size()>=topK){
-                        if(priorityQueue.peek().getScore()<score){
+                    if (priorityQueue.size() >= topK) {
+                        if (priorityQueue.peek().getScore() < score) {
                             priorityQueue.poll();
                             priorityQueue.add(new ScoreRecord(docID, score));
                         }
-                    }else{
+                    } else {
                         priorityQueue.add(new ScoreRecord(docID, score));
                     }
                 }
@@ -1296,34 +1290,34 @@ public class InvertedIndexManager {
             doclistPageFileChannel.close();
         }
         normalQueue.sort((o1, o2) -> {
-            if(o1.getScore()<o2.getScore()){
+            if (o1.getScore() < o2.getScore()) {
                 return 1;
-            }else if(o1.getScore()>o2.getScore()){
+            } else if (o1.getScore() > o2.getScore()) {
                 return -1;
             }
             return 0;
         });
-        List<Pair<Document,Double>> topDocuments = new ArrayList<>();
-        if(priorityQueue==null){
-            for(int i=0;i<normalQueue.size();i++){
+        List<Pair<Document, Double>> topDocuments = new ArrayList<>();
+        if (priorityQueue == null) {
+            for (int i = 0; i < normalQueue.size(); i++) {
                 ScoreRecord cur = normalQueue.get(i);
                 int segmentID = cur.getDocID().getSegmentId();
                 int docID = cur.getDocID().getLocalDocId();
                 DocumentStore documentStore = MapdbDocStore.createOrOpen(MapdbPathBuilder(segmentID));
-                topDocuments.add(new Pair(documentStore.getDocument(docID),cur.getScore()));
+                topDocuments.add(new Pair(documentStore.getDocument(docID), cur.getScore()));
                 documentStore.close();
             }
-        }else{
+        } else {
             int len = priorityQueue.size();
-            for(int i=0;i<len;i++){
-                if(i>topK-1){
+            for (int i = 0; i < len; i++) {
+                if (i > topK - 1) {
                     break;
                 }
                 ScoreRecord cur = priorityQueue.poll();
                 int segmentID = cur.getDocID().getSegmentId();
                 int docID = cur.getDocID().getLocalDocId();
                 DocumentStore documentStore = MapdbDocStore.createOrOpen(MapdbPathBuilder(segmentID));
-                topDocuments.add(new Pair(documentStore.getDocument(docID),cur.getScore()));
+                topDocuments.add(new Pair(documentStore.getDocument(docID), cur.getScore()));
                 documentStore.close();
             }
             Collections.reverse(topDocuments);
@@ -1331,13 +1325,13 @@ public class InvertedIndexManager {
         return topDocuments;
     }
 
-    private double idf(int N,int docFreq){
-        if(docFreq==0){
+    private double idf(int N, int docFreq) {
+        if (docFreq == 0) {
             return 0;
         }
-        if(N==docFreq){
-            return (double)1;
+        if (N == docFreq) {
+            return (double) 1;
         }
-        return Math.log((double)(N)/(double)docFreq)/Math.log((double)10);
+        return Math.log((double) (N) / (double) docFreq) / Math.log((double) 10);
     }
 }

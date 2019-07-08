@@ -9,6 +9,7 @@ import java.util.*;
 public class StopWords {
 
     public static Set<String> stopWords = new HashSet<>();
+
     static {
         stopWords.addAll(Arrays.asList(
                 "i",
@@ -140,21 +141,14 @@ public class StopWords {
                 "now"
         ));
     }
-    public static List<String> removeStopWords(List<String> text){
-        for(int i=0;i<text.size();i++){
-            if(StopWords.stopWords.contains(text.get(i))) {
+
+    public static List<String> removeStopWords(List<String> text) {
+        for (int i = 0; i < text.size(); i++) {
+            if (StopWords.stopWords.contains(text.get(i))) {
                 text.remove(i);
                 i--;
             }
         }
         return text;
-    }
-    public static String listToText(List<String> reducedTextList){
-        StringBuilder result = new StringBuilder();
-        for(int i=0;i<reducedTextList.size();i++){
-            result.append(reducedTextList.get(i));
-            if(i!=reducedTextList.size()-1) result.append(" ");
-        }
-        return result.toString();
     }
 }
